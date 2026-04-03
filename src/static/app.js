@@ -25,6 +25,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <h5>Signed-up Participants:</h5>
+            <ul class="participants-list">
+              ${details.participants.length > 0 
+                ? details.participants.map(email => `<li>${email} <span class="delete-icon" onclick="unregister('${email.replace(/'/g, "\\'")}', '${name.replace(/'/g, "\\'")}')">&times;</span></li>`).join('')
+                : '<li>No participants yet</li>'}
+            </ul>
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
@@ -62,6 +70,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Refresh activities to show the new participant
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
@@ -80,6 +90,29 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error signing up:", error);
     }
   });
+
+  // Function to unregister a participant
+  async function unregister(email, activityName) {
+    try {
+      const response = await fetch(
+        `/activities/${encodeURIComponent(activityName)}/signup?email=${encodeURIComponent(email)}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        // Refresh activities
+        fetchActivities();
+      } else {
+        const result = await response.json();
+        alert(result.detail || "Error unregistering");
+      }
+    } catch (error) {
+      console.error("Error unregistering:", error);
+      alert("Failed to unregister. Please try again.");
+    }
+  }
 
   // Initialize app
   fetchActivities();
